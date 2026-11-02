@@ -4,7 +4,7 @@ import { mkdirSync, existsSync, readFileSync, statSync } from 'node:fs';
 import { resolve, extname, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { analyze } from './ai.mjs';
-import { makeApproval, invoicePayload, validateInvoiceReadback, AppError } from './domain.mjs';
+import { makeApproval, invoicePayload, validateInvoiceReadback, reconciliationCandidate, AppError } from './domain.mjs';
 import { paypal, sandboxBase } from './paypal.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -14,6 +14,7 @@ db.exec('CREATE TABLE IF NOT EXISTS records (id TEXT PRIMARY KEY, kind TEXT NOT 
 const put = (kind, obj) => { db.prepare('INSERT INTO records(id,kind,content) VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET content=excluded.content').run(obj.id, kind, JSON.stringify(obj)); return obj; };
 const get = (id, kind) => { const row = db.prepare('SELECT content FROM records WHERE id=? AND kind=?').get(id, kind); if (!row) throw new AppError('Record not found.', 404); return JSON.parse(row.content); };
 const list = kind => db.prepare('SELECT content FROM records WHERE kind=? ORDER BY rowid DESC').all(kind).map(r => JSON.parse(r.content));
+for (const a of list('approval')) if (a.state === 'CREATING') put('approval', { ...a, state: 'REVIEW_REQUIRED', error: 'The server restarted during invoice creation. Reconcile with PayPal before continuing.' });
 const json = (res, status, value) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(JSON.stringify(value)); };
 async function readBody(req) { let text = ''; for await (const chunk of req) { text += chunk; if (text.length > 50000) throw new AppError('Request too large.', 413); } try { return text ? JSON.parse(text) : {}; } catch { throw new AppError('Request must be valid JSON.'); } }
 const server = createServer(async (req, res) => {
@@ -37,9 +38,15 @@ const server = createServer(async (req, res) => {
       const prior = list('approval').find(a => a.hash === approval.hash);
       return json(res, prior ? 200 : 201, prior || put('approval', approval));
     }
-    const match = url.pathname.match(/^\/api\/approvals\/([a-f0-9-]+)\/(invoice|publish|refresh)$/);
+    const match = url.pathname.match(/^\/api\/approvals\/([a-f0-9-]+)\/(invoice|publish|refresh|reconcile)$/);
     if (req.method === 'POST' && match) {
       const [, id, action] = match; const a = get(id, 'approval');
+      if (action === 'reconcile') {
+        const found = a.invoice?.id || reconciliationCandidate((await paypal('/v2/invoicing/search-invoices?page=1&page_size=100', { method: 'POST', body: { invoice_number: a.invoiceNumber } })).items, a);
+        const invoice = await paypal('/v2/invoicing/invoices/' + encodeURIComponent(found));
+        validateInvoiceReadback(invoice, a); a.invoice = invoice; a.state = invoice.status; a.verifiedAt = new Date().toISOString(); a.reconciledAt = a.verifiedAt; delete a.error;
+        put('approval', a); return json(res, 200, a);
+      }
       if (action === 'invoice') {
         if (a.invoice) return json(res, 200, { ...a, reused: true });
         if (a.state !== 'APPROVED') throw new AppError('Creation is pending or uncertain. Reconcile before retrying; no automatic duplicate invoice.', 409);

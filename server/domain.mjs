@@ -86,3 +86,8 @@ export function validateInvoiceReadback(invoice, approval) {
   });
   return invoice;
 }
+export function reconciliationCandidate(items, approval) {
+  const matches = (items || []).filter(i => i.detail?.invoice_number === approval.invoiceNumber);
+  if (matches.length !== 1 || !matches[0].id) throw new AppError(matches.length ? 'Multiple matching PayPal invoices need manual review. No invoice was created.' : 'No matching invoice was found yet. This review remains blocked to avoid a duplicate; check again or inspect the sandbox dashboard.', 409);
+  return matches[0].id;
+}

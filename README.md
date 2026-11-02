@@ -60,6 +60,12 @@ Repeated invoice creation for that review returns its existing invoice. If a
 network outcome is uncertain, the app stops for reconciliation instead of
 automatically creating another invoice.
 
+If the server restarts during creation, the persisted review becomes
+`REVIEW_REQUIRED`. **Reconcile with PayPal** searches by the recorded invoice
+number and accepts exactly one matching invoice only after verifying its full
+contents. Zero or multiple matches remain blocked for manual review. This
+recovery path never creates a replacement invoice.
+
 ## Technology and attribution
 
 Original application code by Codex at the entrant's direction. Runtime AI uses

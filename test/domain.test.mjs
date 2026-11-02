@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { validateAnalysis, makeApproval, invoicePayload, validateInvoiceReadback, decimalUnits } from '../server/domain.mjs';
+import { validateAnalysis, makeApproval, invoicePayload, validateInvoiceReadback, reconciliationCandidate, decimalUnits } from '../server/domain.mjs';
 
 const input = { contract: 'Three responsive pages. One revision included.', request: 'Keep responsive pages. Add two portfolio pages.' };
 const output = { summary: 'One included item and a new page request.', changes: [
@@ -31,4 +31,10 @@ test('PayPal readback must match recipient, currency, total and all approved lin
   assert.throws(() => validateInvoiceReadback({ ...invoice, amount: { currency_code: 'USD', value: '161.00' } }, approved), /does not match/);
   const tampered = structuredClone(invoice); tampered.items[0].unit_amount.value = '81.00';
   assert.throws(() => validateInvoiceReadback(tampered, approved), /line item/);
+});
+test('Recovery requires exactly one exact invoice-number match and never guesses', () => {
+  const approval = { invoiceNumber: 'SL-EXACT' };
+  assert.equal(reconciliationCandidate([{ id: 'INV2-A', detail: { invoice_number: 'SL-EXACT' } }, { id: 'INV2-B', detail: { invoice_number: 'SL-EXACT-prefix' } }], approval), 'INV2-A');
+  assert.throws(() => reconciliationCandidate([], approval), /No matching invoice/);
+  assert.throws(() => reconciliationCandidate([{ id: 'INV2-A', detail: { invoice_number: 'SL-EXACT' } }, { id: 'INV2-B', detail: { invoice_number: 'SL-EXACT' } }], approval), /Multiple matching/);
 });
