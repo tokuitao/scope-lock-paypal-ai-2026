@@ -1,0 +1,23 @@
+{
+  "name": "scope-lock",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5160 --strictPort",
+    "server": "node --env-file=.env server/index.mjs",
+    "build": "vite build",
+    "test": "node --test test/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "ag-grid-community": "^36.2.0",
+    "ag-grid-react": "^36.2.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "vite": "^8.3.5"
+  }
+}
