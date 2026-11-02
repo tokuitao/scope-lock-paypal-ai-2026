@@ -4,7 +4,9 @@ Compare an agreed brief with a new client request, review additional scope, and
 create an itemized PayPal **sandbox** invoice that matches the recorded review.
 Built for the PayPal AI Hackathon 2026.
 
-This is an early working prototype. Public video and formal entry are pending.
+This is an early working prototype. [Watch the 2:26 English-captioned demo](https://www.youtube.com/watch?v=SEdduEA55tE).
+The video shows real app operations, an earlier paid sandbox example, and a new
+unpaid invoice. Waiting time is shortened; there is no audio.
 All transactions use fictional sandbox accounts; live payments are intentionally
 unsupported. An operator's review is permission to prepare a payment request,
 not proof that the customer agreed or paid.
@@ -13,6 +15,16 @@ not proof that the customer agreed or paid.
 
 Requires Node.js 24+, Ollama, a local model supporting structured JSON output,
 and a free PayPal Developer sandbox application with Invoicing enabled.
+Install [Node.js](https://nodejs.org/en/download) and
+[Ollama](https://ollama.com/download), then create your own sandbox REST app at
+[PayPal Developer](https://developer.paypal.com/dashboard/applications/sandbox).
+Use its sandbox client ID and secret, sandbox business email, and a sandbox
+personal account for the customer. Do not use live credentials.
+
+The verified `gemma4:e2b` download is approximately 7.2 GB. Comparisons took
+about 19–41 seconds in the development environment; your hardware may differ.
+Model files and credentials are not bundled. There is no hosted public backend;
+the instructions below run the actual build locally.
 
 ```sh
 npm ci
@@ -75,7 +87,9 @@ interactive review and invoice workspaces. The PayPal Invoicing REST API is
 central to draft creation, validation, payable links and status readback.
 
 The sponsor boilerplate was reviewed for inspiration; its source was not copied.
-AG Studio integration and sponsor-prize readiness have not yet been verified.
+AG Grid Community is used. AG Studio, Studio Agent Framework, enterprise-only
+modules, and the PayPal AI Toolkit are not used. Sponsor eligibility and awards
+are determined by the organizers.
 
 `npm test` covers quote grounding, excluded/duplicate work, decimal amounts and
 approval-versus-PayPal readback mismatches. It does not certify model judgment,
