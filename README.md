@@ -4,6 +4,9 @@ Compare an agreed brief with a new client request, review additional scope, and
 create an itemized PayPal **sandbox** invoice that matches the recorded review.
 Built for the PayPal AI Hackathon 2026.
 
+[Devpost entry](https://devpost.com/software/scopelock-keep-the-extras-visible)
+(formally submitted November 3, 2026, Japan time).
+
 This is an early working prototype. [Watch the 2:26 English-captioned demo](https://www.youtube.com/watch?v=SEdduEA55tE).
 The video shows real app operations, an earlier paid sandbox example, and a new
 unpaid invoice. Waiting time is shortened; there is no audio.
