@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5160 --strictPort",
     "server": "node --env-file=.env server/index.mjs",
+    "doctor": "node scripts/doctor.mjs",
     "build": "vite build",
     "test": "node --test test/*.test.mjs"
   },

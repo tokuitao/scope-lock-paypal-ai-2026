@@ -35,17 +35,25 @@ cp .env.example .env
 # Fill .env with your sandbox client ID, secret, and business email.
 # Optionally set PAYPAL_BUYER_EMAIL to your sandbox personal account email.
 ollama pull gemma4:e2b
+npm run build
+npm run doctor
 npm run server
 ```
 
-In another terminal:
+Open http://127.0.0.1:5159. This production setup uses one terminal. Before
+starting the app, `npm run doctor` reports missing/example sandbox settings,
+an unavailable Ollama service or model, and a missing build. It never prints
+credential values. It checks local prerequisites, not PayPal authentication,
+inference accuracy, or invoice/payment success; it creates no invoice.
+
+For frontend development, keep the server running and use another terminal:
 
 ```sh
 npm run dev
 ```
 
-Open http://127.0.0.1:5160. For a production build, run `npm run build` and serve
-the result with `npm run server` at http://127.0.0.1:5159.
+Then open http://127.0.0.1:5160. The production setup above is sufficient to
+try the demo; the development server is optional.
 
 Secrets stay on the server, in the git-ignored `.env`. SQLite records are in
 `data/scopelock.sqlite`, also ignored. Never publish those files. The server

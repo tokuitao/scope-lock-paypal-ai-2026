@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { analyze } from './ai.mjs';
 import { makeApproval, invoicePayload, validateInvoiceReadback, reconciliationCandidate, AppError } from './domain.mjs';
 import { paypal, sandboxBase } from './paypal.mjs';
+import { sandboxConfiguration, localAiStatus } from './setup.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 mkdirSync(resolve(root, 'data'), { recursive: true });
@@ -26,10 +27,9 @@ const server = createServer(async (req, res) => {
     if (origin) { res.setHeader('Access-Control-Allow-Origin', origin); res.setHeader('Vary', 'Origin'); }
     if (req.method === 'OPTIONS') { res.writeHead(204, { 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' }); return res.end(); }
     if (url.pathname === '/api/health') {
-      const model = process.env.OLLAMA_MODEL || 'gemma4:e2b';
-      let available = false;
-      try { const r = await fetch((process.env.OLLAMA_URL || 'http://127.0.0.1:11434') + '/api/tags', { signal: AbortSignal.timeout(3000) }); const data = await r.json(); available = r.ok && data.models?.some(m => m.name === model); } catch {}
-      return json(res, 200, { name: 'ScopeLock', mode: 'sandbox', paypalBase: sandboxBase, credentialsConfigured: !!process.env.PAYPAL_CLIENT_SECRET, sandboxBuyerEmail: process.env.PAYPAL_BUYER_EMAIL, ai: { provider: 'Ollama (local)', model, available } });
+      const configuration = sandboxConfiguration();
+      const ai = await localAiStatus();
+      return json(res, 200, { name: 'ScopeLock', mode: 'sandbox', paypalBase: sandboxBase, credentialsConfigured: configuration.configured, missingConfiguration: configuration.missing, sandboxBuyerEmail: process.env.PAYPAL_BUYER_EMAIL, ai });
     }
     if (req.method === 'GET' && url.pathname === '/api/workspace') return json(res, 200, { analyses: list('analysis'), approvals: list('approval') });
     if (req.method === 'POST' && url.pathname === '/api/analyze') return json(res, 201, put('analysis', await analyze(await readBody(req))));
